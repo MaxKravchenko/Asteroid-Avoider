@@ -1,0 +1,74 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Advertisements;
+
+public class AdManager : MonoBehaviour, IUnityAdsListener
+{
+    [SerializeField] private bool testMode = true;
+    
+    public static AdManager Instance;
+
+#if UNITY_ANDROID
+    private string gameId = "5264025";
+#elif UNITY_IOS
+    private string gameId = "5264024";
+#endif
+
+    private GameOverHandler gameOverHandler;
+  
+    private void Awake() 
+    {
+        if(Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+
+            Advertisement.AddListener(this);
+            Advertisement.Initialize(gameId, testMode);
+        }
+
+    }
+
+    public void ShowAd(GameOverHandler gameOverHandler)
+    {
+        this.gameOverHandler = gameOverHandler;
+        
+        Advertisement.Show($"rewardedVideo");
+    }
+    
+    public void OnUnityAdsDidError(string message)
+    {
+        Debug.LogError($"Unity Ads Error: {message}");
+    }
+    
+    public void OnUnityAdsDidFinish(string placementID, ShowResult showResult)
+    {
+        switch(showResult)
+        {
+            case ShowResult.Finished:
+                gameOverHandler.ContinueGame();
+                break;
+            case ShowResult.Skipped:
+                //Ad was skipped
+                break;
+            case ShowResult.Failed:
+                Debug.LogWarning("Ad Failed");
+                break;
+        }
+    }
+    
+    public void OnUnityAdsDidStart(string placementID)
+    {
+        Debug.Log("Ad Started");
+    }
+    
+    public void OnUnityAdsReady(string placementID)
+    {
+        Debug.Log("Unity Ads Ready");
+    }
+}
