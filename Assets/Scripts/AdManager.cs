@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Advertisements;
 
-public class AdManager : MonoBehaviour, IUnityAdsListener
+public class AdManager : MonoBehaviour, IUnityAdsInitializationListener, IUnityAdsLoadListener, IUnityAdsShowListener
 {
     [SerializeField] private bool testMode = true;
     
@@ -13,13 +13,15 @@ public class AdManager : MonoBehaviour, IUnityAdsListener
     private string gameId = "5264025";
 #elif UNITY_IOS
     private string gameId = "5264024";
+#else
+    private string gameId = "Not Available";
 #endif
 
     private GameOverHandler gameOverHandler;
   
-    private void Awake() 
+    void Awake()
     {
-        if(Instance != null && Instance != this)
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
         }
@@ -28,47 +30,61 @@ public class AdManager : MonoBehaviour, IUnityAdsListener
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            Advertisement.AddListener(this);
-            Advertisement.Initialize(gameId, testMode);
+            Advertisement.Initialize(gameId, testMode, this);
         }
+    }
 
+    public void OnInitializationComplete()
+    {
+        Debug.Log("Unity Ads initialization complete.");
+        Advertisement.Load("rewardedVideo"); 
+    }
+
+    public void OnInitializationFailed(UnityAdsInitializationError error, string message)
+    {
+        Debug.Log($"Unity Ads Initialization Failed: {error} - {message}");
     }
 
     public void ShowAd(GameOverHandler gameOverHandler)
     {
         this.gameOverHandler = gameOverHandler;
-        
-        Advertisement.Show($"rewardedVideo");
+
+        Advertisement.Show("rewardedVideo", this);
     }
-    
-    public void OnUnityAdsDidError(string message)
+
+    public void OnUnityAdsAdLoaded(string placementId)
     {
-        Debug.LogError($"Unity Ads Error: {message}");
+        Debug.Log($"Ad Loaded: {placementId}");
     }
-    
-    public void OnUnityAdsDidFinish(string placementID, ShowResult showResult)
+
+    public void OnUnityAdsFailedToLoad(string placementId, UnityAdsLoadError error, string message)
     {
-        switch(showResult)
+        Debug.Log($"Error loading Ad Unit {placementId}: {error} - {message}");
+    }
+
+    public void OnUnityAdsShowFailure(string placementId, UnityAdsShowError error, string message)
+    {
+        Debug.Log($"Error showing Ad Unit {placementId}: {error} - {message}");
+    }
+
+    public void OnUnityAdsShowStart(string placementId) { }
+
+    public void OnUnityAdsShowClick(string placementId) { }
+
+    public void OnUnityAdsShowComplete(string placementId, UnityAdsShowCompletionState showCompletionState)
+    {
+        Advertisement.Load("rewardedVideo");
+        switch (showCompletionState)
         {
-            case ShowResult.Finished:
+            case UnityAdsShowCompletionState.COMPLETED:
                 gameOverHandler.ContinueGame();
                 break;
-            case ShowResult.Skipped:
-                //Ad was skipped
+            case UnityAdsShowCompletionState.SKIPPED:
+                // Ad was skipped
                 break;
-            case ShowResult.Failed:
+            case UnityAdsShowCompletionState.UNKNOWN:
                 Debug.LogWarning("Ad Failed");
                 break;
         }
-    }
-    
-    public void OnUnityAdsDidStart(string placementID)
-    {
-        Debug.Log("Ad Started");
-    }
-    
-    public void OnUnityAdsReady(string placementID)
-    {
-        Debug.Log("Unity Ads Ready");
     }
 }
