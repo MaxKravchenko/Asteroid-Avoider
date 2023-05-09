@@ -5662,7 +5662,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1559619098}
         m_TargetAssemblyTypeName: GameOverHandler, Assembly-CSharp
-        m_MethodName: ContinueGame
+        m_MethodName: ContinueButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
